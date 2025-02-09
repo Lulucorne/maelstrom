@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maelstrom Map - Sapphire Exile</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; }
+        #map { width: 100%; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Initialize the Map
+        var map = L.map('map', {
+            minZoom: -3,
+            maxZoom: 4,
+            crs: L.CRS.Simple
+        });
+
+        // Define the Base Map Image
+        var imageUrl = 'maelstrom-map.jpg';
+        var imageBounds = [[0, 0], [4000, 4000]];
+        L.imageOverlay(imageUrl, imageBounds).addTo(map);
+        map.fitBounds(imageBounds);
+
+        // ----- ALWAYS VISIBLE REGION BORDER -----
+        var regionBorderOverlay = L.imageOverlay('overlays/region-border.png', imageBounds).addTo(map);
+
+        // ----- TOGGLEABLE REGIONAL OVERLAYS -----
+        var regionalNamesOverlay = L.imageOverlay('overlays/regional-names.png', imageBounds);
+        var parcelLabelsOverlay = L.imageOverlay('overlays/parcel-labels.png', imageBounds);
+
+        // ----- CLAN OVERLAYS -----
+        var clanOverlayHallowedFlame = L.imageOverlay('clans/Hallowed_Flame.png', imageBounds);
+        var clanOverlayThrellKai = L.imageOverlay('clans/Threllkai.png', imageBounds);
+
+        // ----- ICON CREATION FUNCTION (Smaller Icons) -----
+        function createIcon(iconFile) {
+            return L.icon({
+                iconUrl: `icons/${iconFile}`,
+                iconSize: [24, 24], // Smaller size
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24]
+            });
+        }
+
+        // Define Custom Icons
+        var locationIcon = createIcon('icons/location.png');
+        var resourceIcon = createIcon('icons/resource.png');
+        var animalIcon = createIcon('icons/animal.png');
+        var recipeIcon = createIcon('icons/recipe.png');
+        var plantIcon = createIcon('icons/plant.png');
+        var chestIcon = createIcon('icons/chest.png');
+        var baseIcon = createIcon('icons/base.png');
+        var dungeonIcon = createIcon('icons/dungeon.png');
+        var campIcon = createIcon('icons/camp.png');
+        var bossIcon = createIcon('icons/boss.png');
+
+        // ----- CLAN LOCATION MARKERS -----
+        var hallowedFlameMarker = L.marker([2376, 3673], {icon: locationIcon}).bindPopup("Hallowed Flame");
+        var threllKaiMarker = L.marker([1382, 1958], {icon: locationIcon}).bindPopup("Threll'Kai");
+
+        // ----- LAYER GROUPS FOR ORGANIZATION -----
+        var informationLayer = L.layerGroup([regionalNamesOverlay, parcelLabelsOverlay]);
+        var clansLayer = L.layerGroup([clanOverlayHallowedFlame, clanOverlayThrellKai, hallowedFlameMarker, threllKaiMarker]);
+        var resourcesLayer = L.layerGroup();
+        var wildlifeLayer = L.layerGroup();
+        var knowledgeLayer = L.layerGroup();
+
+        // Individual Layers (for fine control)
+        var individualLayers = {
+            "Regional Names": regionalNamesOverlay,
+            "Parcel Labels": parcelLabelsOverlay,
+            "Hallowed Flame": L.layerGroup([clanOverlayHallowedFlame, hallowedFlameMarker]),
+            "Threll'Kai": L.layerGroup([clanOverlayThrellKai, threllKaiMarker]),
+            "Minerals": L.layerGroup(),
+            "Plants": L.layerGroup(),
+            "Chests": L.layerGroup(),
+            "Animal #1": L.layerGroup(),
+            "Animal #2": L.layerGroup(),
+            "Recipes": L.layerGroup(),
+            "Specialists": L.layerGroup()
+        };
+
+        // Grouped Overlays
+        var groupedOverlays = {
+            "<b>Information</b>": { "All Information": informationLayer },
+            "<b>Clans</b>": { "All Clans": clansLayer },
+            "<b>Resources</b>": { "All Resources": resourcesLayer },
+            "<b>Wildlife</b>": { "All Wildlife": wildlifeLayer },
+            "<b>Knowledge</b>": { "All Knowledge": knowledgeLayer },
+            "--------------------------------": {}, // Divider
+            "<b>Toggle Individually</b>": individualLayers
+        };
+
+        // Add Layer Control
+        L.control.layers(null, groupedOverlays, {collapsed: false}).addTo(map);
+
+        // ----- COORDINATE DISPLAY -----
+        var coordsDiv = L.control({ position: 'bottomleft' });
+
+        coordsDiv.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'leaflet-control-layers');
+            div.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+            div.style.padding = '5px';
+            div.style.fontSize = '12px';
+            div.style.borderRadius = '5px';
+            div.innerHTML = "Mouse Position: -";
+            return div;
+        };
+
+        coordsDiv.addTo(map);
+
+        map.on('mousemove', function (e) {
+            var lat = e.latlng.lat.toFixed(2);
+            var lng = e.latlng.lng.toFixed(2);
+            coordsDiv.getContainer().innerHTML = `Mouse Position: [${lat}, ${lng}]`;
+        });
+
+        // ----- CLICK TO ADD TEMPORARY MARKERS -----
+        map.on('click', function (e) {
+            var lat = e.latlng.lat.toFixed(2);
+            var lng = e.latlng.lng.toFixed(2);
+            var tempMarker = L.marker([lat, lng]).addTo(map)
+                .bindPopup(`New Marker: [${lat}, ${lng}]`).openPopup();
+            console.log(`Marker added at: [${lat}, ${lng}]`);
+        });
+
+    </script>
+</body>
+</html>
